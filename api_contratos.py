@@ -18,6 +18,7 @@ SALIDA_DIR.mkdir(exist_ok=True)
 
 app = FastAPI(title="Servicio de contratos")
 
+
 @app.post("/contrato")
 async def crear_contrato(request: Request):
     """
@@ -36,20 +37,26 @@ async def crear_contrato(request: Request):
         mode="w",
         suffix=".json",
         delete=False,
-        dir=SALIDA_DIR
+        dir=SALIDA_DIR,
     ) as tmp:
         json.dump(datos, tmp, ensure_ascii=False, indent=2)
         tmp_path = tmp.name
 
     # Llamar a tu función
-    out_path = generar_contrato(
-    datos_or_path=tmp_path,       # ✅ nombre nuevo
-    plantilla_path=PLANTILLA_PATH,
-    salida_dir=OUTPUT_DIR,
-    listar_marcadores=False,
-    resaltar=False,
-)
-
+    try:
+        out_path = generar_contrato(
+            datos_or_path=tmp_path,
+            plantilla_path=str(PLANTILLA_PATH),
+            salida_dir=str(SALIDA_DIR),
+            listar_marcadores=False,
+            resaltar=False,
+        )
+    except ValueError as e:
+        # Errores de validación de datos → 400/422 (tú eliges)
+        raise HTTPException(status_code=422, detail=f"Error de validación: {e}")
+    except Exception as e:
+        # Cualquier otra cosa → 500
+        raise HTTPException(status_code=500, detail=f"Error al generar el contrato: {e}")
 
     # Si por alguna razón no devolvió ruta
     if not out_path:
@@ -61,6 +68,7 @@ async def crear_contrato(request: Request):
     file_url = str(request.url_for("descargar_contrato", filename=filename))
 
     return {"fileUrl": file_url}
+
 
 @app.get("/files/{filename}", name="descargar_contrato")
 async def descargar_contrato(filename: str):
