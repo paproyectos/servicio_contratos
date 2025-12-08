@@ -449,7 +449,12 @@ def expandir_repeat_items(doc: Document, items: list[dict[str, str]]):
     ITEM_NAME_RX = re.compile(r"^\s*item_descripcion\s*$", re.IGNORECASE)
 
     def run_score_for_t(t):
-        # puntúa run padre: b=5, i=4, w:sz=3 (para elegir el destino del texto)
+        """
+        Puntúa el w:r padre para elegir dónde dejar el texto:
+        - negrita (w:b)     → +5
+        - cursiva (w:i)     → +4
+        - tamaño explícito  → +3
+        """
         score = 0
         r = t.getparent()
         if r is None:
@@ -476,27 +481,22 @@ def expandir_repeat_items(doc: Document, items: list[dict[str, str]]):
         if not ts:
             return
 
-        # state machine que cruza múltiples w:t
         buffering = False
         buf_nodes = []
         buf_text = ""
         cur_delims = None  # (ldel, rdel)
 
         def maybe_flush_if_item():
-            # Si buf_text contiene {{ item_descripcion }}, hacer el reemplazo
             nonlocal buf_nodes, buf_text, buffering, cur_delims
-            # Extraer el contenido sin delimitadores
             for ldel, rdel in zip(ITEM_OPEN, ITEM_CLOSE):
                 if buf_text.startswith(ldel) and buf_text.endswith(rdel):
                     inner = buf_text[len(ldel): -len(rdel)]
                     if ITEM_NAME_RX.match(inner):
-                        # elegir mejor w:t para alojar el texto final
                         best_t = max(buf_nodes, key=run_score_for_t)
                         best_t.text = replacement_text
                         for nn in buf_nodes:
                             if nn is not best_t:
                                 nn.text = ""
-                        # reset
                         buffering = False
                         buf_nodes = []
                         buf_text = ""
@@ -509,7 +509,6 @@ def expandir_repeat_items(doc: Document, items: list[dict[str, str]]):
             i = 0
             while i < len(text):
                 if not buffering:
-                    # ¿empieza algún delimitador aquí?
                     started = False
                     for ldel in ITEM_OPEN:
                         L = len(ldel)
@@ -527,23 +526,17 @@ def expandir_repeat_items(doc: Document, items: list[dict[str, str]]):
                     buf_text += text[i]
                     if t not in buf_nodes:
                         buf_nodes.append(t)
-                    # ¿cerró?
                     ldel, rdel = cur_delims
                     if buf_text.endswith(rdel):
-                        # intentamos reemplazar si es item_descripcion
                         replaced = maybe_flush_if_item()
                         if not replaced:
-                            # no era item_descripcion → no tocar, reset sin cambiar textos
                             buffering = False
                             buf_nodes = []
                             buf_text = ""
                             cur_delims = None
                     i += 1
-            # si seguimos dentro de un marcador, vaciamos este t (para no duplicar)
             if buffering and t is not buf_nodes[0]:
                 t.text = ""
-
-        # Si terminara con marcador sin cerrar, lo dejamos tal cual
 
     # --- 1) localizar bloque en TODOS los párrafos XML -----------------------
     ps = root.xpath(".//w:p")
@@ -588,6 +581,7 @@ def expandir_repeat_items(doc: Document, items: list[dict[str, str]]):
         par = p.getparent()
         if par is not None:
             par.remove(p)
+
 
 # ------------------------- Mapping y normalización ----------------------------
 
