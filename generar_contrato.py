@@ -38,7 +38,7 @@ except Exception:
     pd = None
 
 from docx import Document
-from docx.text.paragraph import Paragraph+++
+#from docx.text.paragraph import Paragraph
 
 from copy import deepcopy
 
