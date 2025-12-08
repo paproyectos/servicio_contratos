@@ -38,9 +38,11 @@ except Exception:
     pd = None
 
 from docx import Document
-from docx.text.paragraph import Paragraph
+from docx.text.paragraph import Paragraph+++
 
 from copy import deepcopy
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # ------------------------- Configuración delimitadores ------------------------
 # Aceptamos estos tres delimitadores simultáneamente (tolerante a espacios):
@@ -545,7 +547,14 @@ def generar_contrato(datos_path: str, plantilla_path: str, salida_dir: str,
                      resaltar: bool = False) -> str | None:
     # Cargar datos y documento
     datos = cargar_datos(datos_path)
-    doc = Document(plantilla_path)
+
+    full_plantilla = plantilla_path
+    if not os.path.isabs(full_plantilla):
+        full_plantilla = os.path.join(BASE_DIR, plantilla_path)
+
+    print("Usando plantilla:", full_plantilla)  # para ver en los logs de Render
+
+    doc = Document(full_plantilla)
 
     if listar_marcadores:
         print("Marcadores encontrados:")
@@ -649,11 +658,16 @@ def main():
         print("Créditos: desarrollado colaborativamente en 2025 con soporte de ChatGPT (GPT-5 Thinking).")
         return
 
-    if args.listar_marcadores:
-        if not args.plantilla:
-            raise SystemExit("Para --listar-marcadores debes indicar --plantilla.")
-        doc = Document(args.plantilla)
-        print("Marcadores encontrados:")
+
+   if args.listar_marcadores:
+                   if not args.plantilla:
+                            raise SystemExit("Para --listar-marcadores debes indicar --plantilla.")
+        full_plantilla = args.plantilla
+        if not os.path.isabs(full_plantilla):
+            full_plantilla = os.path.join(BASE_DIR, args.plantilla)
+        doc = Document(full_plantilla)
+
+	print("Marcadores encontrados:")
         for t in extraer_marcadores_universal(doc):
             print("-", t)
         return
