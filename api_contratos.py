@@ -43,12 +43,13 @@ async def crear_contrato(request: Request):
 
     # Llamar a tu función
     out_path = generar_contrato(
-        datos_path=tmp_path,
-        plantilla_path=str(PLANTILLA_PATH),
-        salida_dir=str(SALIDA_DIR),
-        listar_marcadores=False,
-        resaltar=False,
-    )
+    datos_or_path=tmp_path,       # ✅ nombre nuevo
+    plantilla_path=PLANTILLA_PATH,
+    salida_dir=OUTPUT_DIR,
+    listar_marcadores=False,
+    resaltar=False,
+)
+
 
     # Si por alguna razón no devolvió ruta
     if not out_path:
