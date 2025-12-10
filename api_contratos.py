@@ -16,8 +16,20 @@ PLANTILLA_PATH = BASE_DIR / "plantilla.docx"
 SALIDA_DIR = BASE_DIR / "salida_contratos"
 SALIDA_DIR.mkdir(exist_ok=True)
 
-app = FastAPI(title="Servicio de contratos")
+app = FastAPI()
 
+@app.get("/")
+def root():
+    return {
+        "status": "ok",
+        "mensaje": "Servicio de contratos activo. Usa POST /contrato."
+    }
+
+@app.get("/contrato")
+def info_contrato():
+    return {
+        "mensaje": "Este endpoint genera contratos. Envíame un POST /contrato con un JSON en el cuerpo."
+    }
 
 @app.post("/contrato")
 async def crear_contrato(request: Request):
