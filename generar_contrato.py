@@ -633,7 +633,7 @@ def generar_contrato(
 
     print("Usando plantilla:", full_plantilla)
 
-    # 3) Cargar documento
+    # 3) Cargar documento (SIEMPRE a partir de la plantilla original)
     doc = Document(full_plantilla)
 
     if listar_marcadores:
@@ -672,7 +672,7 @@ def generar_contrato(
     if resaltar:
         resaltar_pendientes_universal(doc)
 
-    # 9) Nombre de archivo
+    # 9) Construir nombre base del archivo a partir de los datos
     nombre_pt = str(datos.get("nombre_PT", "")).strip()
     nombre, apellido = partir_nombre(nombre_pt)
     apellido = quitar_acentos(apellido).title()
@@ -691,9 +691,15 @@ def generar_contrato(
         except Exception:
             etapa_aaaa = "XXXX"
 
-    nombre_archivo = f"{apellido}, {nombre_simple}, Contrato{codigo}Etapa{etapa_aaaa}.docx"
+    base_nombre_archivo = (
+        f"{apellido}, {nombre_simple}, Contrato{codigo}Etapa{etapa_aaaa}"
+    )
 
-    # 10) Metadatos del documento (autoría)
+    # 10) AÑADIDO: timestamp para que CADA generación sea un archivo nuevo
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    nombre_archivo = f"{base_nombre_archivo}-{timestamp}.docx"
+
+    # 11) Metadatos del documento (autoría)
     try:
         cp = doc.core_properties
         cp.author = cp.author or "Pa"
@@ -715,11 +721,12 @@ def generar_contrato(
         # No bloquear la generación si no se pueden escribir metadatos
         pass
 
-    # 11) Guardar
+    # 12) Guardar SOLO en la carpeta de salida (nunca en la plantilla)
     os.makedirs(salida_dir, exist_ok=True)
     out_path = os.path.join(salida_dir, nombre_archivo)
     doc.save(out_path)
     return out_path
+
 
 # ------------------------- CLI -----------------------------------------------
 
