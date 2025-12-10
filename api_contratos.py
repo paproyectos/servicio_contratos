@@ -40,6 +40,9 @@ async def crear_contrato(request: Request):
     """
     try:
         datos = await request.json()
+        # 👇 AGREGA ESTO PARA DEPURAR
+        print("=== JSON RECIBIDO DESDE AIRTABLE ===")
+        print(json.dumps(datos, ensure_ascii=False))
     except Exception:
         raise HTTPException(status_code=400, detail="Body debe ser JSON válido")
 
